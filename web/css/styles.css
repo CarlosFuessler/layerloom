@@ -1,0 +1,344 @@
+/* Layerloom — shared visual language for the web studio */
+
+:root {
+  --color-brand: #18181b;
+  --color-brand-accent: #10b981;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f4f5;
+  --color-border: rgba(228, 228, 231, 0.9);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible,
+label:focus-within {
+  outline: 2px solid var(--color-brand-accent);
+  outline-offset: 2px;
+}
+
+button {
+  letter-spacing: -0.01em;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+::selection {
+  background: rgba(16, 185, 129, 0.22);
+}
+
+/* Keep the dense workspace calm and consistent between Tailwind surfaces. */
+.app-header {
+  box-shadow: 0 1px 0 rgba(24, 24, 27, 0.02);
+}
+
+.app-sidebar {
+  box-shadow: 8px 0 24px rgba(24, 24, 27, 0.03);
+}
+
+.app-sidebar > div[id^="tabContent"] > div,
+.app-sidebar > div[id^="tabContent"] > section {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-sidebar > div[id^="tabContent"] > div:hover,
+.app-sidebar > div[id^="tabContent"] > section:hover {
+  border-color: rgba(161, 161, 170, 0.55);
+}
+
+.viewport-toolbar > div {
+  box-shadow: 0 10px 30px rgba(24, 24, 27, 0.1);
+}
+
+/* Base Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e4e4e7;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #d4d4d8;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #27272a;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Make native controls match the quiet, compact UI without relying on browser defaults. */
+input[type="checkbox"] {
+  accent-color: var(--color-brand-accent);
+}
+
+input[type="number"],
+input[type="text"] {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus {
+  border-color: rgba(16, 185, 129, 0.7);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+/* Custom Range Input Styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 20px;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+/* Chrome / Safari / Edge Track */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 9999px;
+  background: #e4e4e7;
+  transition: background 0.15s ease;
+}
+
+.dark input[type="range"]::-webkit-slider-runnable-track {
+  background: #27272a;
+}
+
+input[type="range"]:hover::-webkit-slider-runnable-track {
+  background: #d4d4d8;
+}
+
+.dark input[type="range"]:hover::-webkit-slider-runnable-track {
+  background: #3f3f46;
+}
+
+/* Chrome / Safari / Edge Thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5.5px;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #18181b;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.1s ease;
+}
+
+.dark input[type="range"]::-webkit-slider-thumb {
+  background: #f4f4f5;
+  border: 2px solid #18181b;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
+}
+
+/* Firefox Track & Thumb */
+input[type="range"]::-moz-range-track {
+  height: 5px;
+  border-radius: 9999px;
+  background: #e4e4e7;
+}
+
+.dark input[type="range"]::-moz-range-track {
+  background: #27272a;
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #18181b;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s ease;
+}
+
+.dark input[type="range"]::-moz-range-thumb {
+  background: #f4f4f5;
+  border: 2px solid #18181b;
+}
+
+/* Glassmorphism Floating Containers */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(228, 228, 231, 0.8);
+}
+
+.dark .glass-panel {
+  background: rgba(18, 18, 21, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(39, 39, 42, 0.8);
+}
+
+/* Interactive Card & Button Micro-Interactions */
+.interactive-card {
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.interactive-card:hover {
+  transform: translateY(-1px);
+}
+
+.interactive-card:active {
+  transform: scale(0.99);
+}
+
+@media (max-width: 900px) {
+  .app-header {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .app-sidebar {
+    width: min(22rem, 42vw);
+  }
+
+  .viewport-toolbar {
+    left: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .viewport-toolbar > div:last-child {
+    gap: 0.4rem;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+
+  .viewport-toolbar > div:last-child > div:first-child {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    min-width: 320px;
+    overflow: auto;
+  }
+
+  .app-header {
+    height: 3.75rem;
+  }
+
+  .app-header > div:first-child > div:last-child p {
+    display: none;
+  }
+
+  .app-header .hidden.sm\:flex {
+    display: none;
+  }
+
+  .app-header label span {
+    display: none;
+  }
+
+  .app-sidebar {
+    width: 100%;
+    max-width: none;
+    height: 46vh;
+    border-right: 0;
+    border-bottom: 1px solid rgba(228, 228, 231, 0.9);
+  }
+
+  main {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .app-sidebar + section {
+    min-height: 54vh;
+  }
+
+  .viewport-toolbar {
+    top: 0.75rem;
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+
+  .viewport-toolbar > div:first-child {
+    flex-shrink: 0;
+  }
+
+  .viewport-toolbar > div:last-child {
+    flex-shrink: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Custom Color Picker Swatch Input */
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Number input spinner cleanup */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

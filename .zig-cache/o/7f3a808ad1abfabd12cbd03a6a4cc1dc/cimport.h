@@ -1,0 +1,9 @@
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS 1
+#define CIMGUI_USE_SDL3 1
+#define CIMGUI_USE_OPENGL3 1
+#include <SDL3/SDL.h>
+#include <cimgui.h>
+#include <cimgui_impl.h>
+#include <stb_image.h>
+#include <stb_image_write.h>
+#include <OpenGL/gl3.h>

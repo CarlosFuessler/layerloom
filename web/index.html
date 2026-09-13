@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Layerloom</title>
+  
+  <!-- Tailwind CSS & Three.js CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans h-screen flex flex-col overflow-hidden select-none transition-colors duration-150">
+
+  <!-- TOP HEADER BAR -->
+  <header class="app-header h-14 border-b border-zinc-200 dark:border-zinc-800/80 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md px-4 flex items-center justify-between z-20 shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center font-bold text-xs tracking-wider shadow-sm">
+        LL
+      </div>
+      <div>
+        <h1 class="font-bold text-xs tracking-wider text-zinc-900 dark:text-zinc-100">
+          LAYERLOOM
+        </h1>
+      </div>
+    </div>
+
+    <!-- Center: Active Printer Pill (jump to Printers tab) -->
+    <button id="headerPrinterBadgeBtn" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-850 text-xs text-zinc-700 dark:text-zinc-300 transition font-medium border border-zinc-200 dark:border-zinc-800 shadow-xs" title="Click to view & change 3D Printer Bed">
+      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+      <span id="headerPrinterBadge" class="font-medium">Bambu Lab X1 Carbon (256mm)</span>
+      <svg class="w-3 h-3 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </button>
+
+    <!-- Header Actions -->
+    <div class="flex items-center gap-2">
+      <!-- Import Image Button -->
+      <label class="cursor-pointer bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 text-xs px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 font-semibold shadow-xs">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        <span>Import Image</span>
+        <input type="file" id="fileInput" accept="image/*" class="hidden">
+      </label>
+
+      <!-- Theme Switcher -->
+      <button id="btnToggleTheme" class="bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 transition shadow-xs" title="Toggle Light/Dark Theme">
+        <svg id="iconSun" class="w-3.5 h-3.5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <svg id="iconMoon" class="w-3.5 h-3.5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+      </button>
+
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 flex overflow-hidden">
+    
+    <!-- UNIFIED LEFT SIDEBAR: PALETTE, RELIEF, PRINTERS & EXPORTS -->
+    <aside class="app-sidebar w-96 border-r border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col shrink-0 z-10 select-none">
+      
+      <!-- Segmented Modern Tabs -->
+      <div class="p-3 pb-0 border-b border-zinc-200 dark:border-zinc-800/80">
+        <div class="flex bg-zinc-200/70 dark:bg-zinc-900 p-1 rounded-xl text-xs font-medium gap-1">
+          <button id="tabBtnFilaments" class="flex-1 py-1.5 px-2.5 rounded-lg text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 shadow-sm transition font-semibold">
+            Palette
+          </button>
+          <button id="tabBtnRelief" class="flex-1 py-1.5 px-2.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition font-medium">
+            Relief
+          </button>
+          <button id="tabBtnPrinters" class="flex-1 py-1.5 px-2.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition font-medium">
+            Printers
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab 1: Filament Palette & Slicer Layers -->
+      <div id="tabContentFilaments" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <!-- Auto Color Count Selector (2..16 Colors) -->
+        <div class="bg-white dark:bg-zinc-900/80 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">Filament Slots</label>
+              <span class="text-[10px] text-zinc-400">2 to 16 Colors (Up to 4x AMS)</span>
+            </div>
+            <span class="text-xs font-mono text-zinc-900 dark:text-zinc-100 font-semibold px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 shrink-0" id="slotCountLabel">4 Colors • 1 AMS</span>
+          </div>
+
+          <!-- Stepper & Range Slider -->
+          <div class="flex items-center gap-2">
+            <button id="btnColorMinus" type="button" aria-label="Decrease colors" class="w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition font-bold text-sm border border-zinc-200 dark:border-zinc-700/80 active:scale-95 select-none shrink-0 shadow-xs">
+              &minus;
+            </button>
+            <div class="flex-1 relative flex items-center px-1">
+              <input id="sliderColorCount" type="range" min="2" max="16" step="1" value="4" class="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-zinc-900 dark:accent-zinc-100">
+            </div>
+            <button id="btnColorPlus" type="button" aria-label="Increase colors" class="w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition font-bold text-sm border border-zinc-200 dark:border-zinc-700/80 active:scale-95 select-none shrink-0 shadow-xs">
+              +
+            </button>
+          </div>
+
+          <!-- Quick Hardware Presets Grid -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-[10px] text-zinc-400 font-medium">
+              <span>Hardware Presets</span>
+              <span>2 – 16 Spools</span>
+            </div>
+            <div class="grid grid-cols-6 gap-1 text-[11px]">
+              <button data-count="2" title="2 Colors (Dual / Manual Swap)" class="btnColorCount py-1.5 rounded-xl border text-center font-medium transition active:scale-95">2</button>
+              <button data-count="4" title="4 Colors (1x Bambu AMS)" class="btnColorCount py-1.5 rounded-xl border text-center font-medium transition active:scale-95">4</button>
+              <button data-count="5" title="5 Colors (Prusa MMU3 / XL 5-Tool)" class="btnColorCount py-1.5 rounded-xl border text-center font-medium transition active:scale-95">5</button>
+              <button data-count="8" title="8 Colors (2x Bambu AMS Hub)" class="btnColorCount py-1.5 rounded-xl border text-center font-medium transition active:scale-95">8</button>
+              <button data-count="12" title="12 Colors (3x Bambu AMS Hub)" class="btnColorCount py-1.5 rounded-xl border text-center font-medium transition active:scale-95">12</button>
+              <button data-count="16" title="16 Colors (4x Bambu AMS Hub / ERCF Max)" class="btnColorCount py-1.5 rounded-xl border text-center font-medium transition active:scale-95">16</button>
+            </div>
+          </div>
+
+          <button id="btnReExtract" class="w-full text-center text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 py-2 rounded-xl bg-zinc-100/80 hover:bg-zinc-200/80 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80 border border-zinc-200 dark:border-zinc-700 transition-all font-medium flex items-center justify-center gap-1.5 shadow-xs active:scale-[0.99]">
+            <svg class="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd"></path></svg>
+            <span>Auto-Detect Colors from Image</span>
+          </button>
+        </div>
+
+        <!-- Palette Stack Header -->
+        <div class="flex items-center justify-between pt-1">
+          <label class="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Active Filaments (Bottom &rarr; Top)</label>
+          <button id="btnAutoDistribute" class="text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-medium flex items-center gap-1 transition">
+            <svg class="w-3 h-3 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+            <span>Auto Z-Heights</span>
+          </button>
+        </div>
+
+        <!-- Filament Cards Container -->
+        <div id="filamentList" class="space-y-2.5"></div>
+
+        <!-- Filament Layer Distribution Histogram -->
+        <div class="bg-white dark:bg-zinc-900/80 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">Layer Distribution Histogram</label>
+            <span class="text-[10px] font-mono text-zinc-400">Light Intensity &rarr; Z</span>
+          </div>
+          <div class="relative bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200/80 dark:border-zinc-800 p-2 h-20 flex items-end shadow-inner">
+            <canvas id="histCanvas" class="w-full h-full"></canvas>
+          </div>
+        </div>
+
+        <!-- Slicer Layer Swap Table -->
+        <div class="bg-white dark:bg-zinc-900/80 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">Slicer Layer Swap Schedule</label>
+              <p class="text-[10px] text-zinc-400">Pause heights for MMU & manual filament swaps</p>
+            </div>
+            <button id="btnCopyInstructions" class="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs text-zinc-700 dark:text-zinc-300 font-medium transition border border-zinc-200 dark:border-zinc-700/80">Copy</button>
+          </div>
+          
+          <div class="bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-zinc-100 dark:bg-zinc-900 text-[10px] text-zinc-500 uppercase border-b border-zinc-200 dark:border-zinc-800">
+                <tr>
+                  <th class="p-2">Slot</th>
+                  <th class="p-2">Color</th>
+                  <th class="p-2">Layers</th>
+                  <th class="p-2">Z-Range</th>
+                </tr>
+              </thead>
+              <tbody id="swapTableBody" class="divide-y divide-zinc-200 dark:divide-zinc-850 font-mono text-[11px]"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Relief Height & Depth Controls -->
+      <div id="tabContentRelief" class="flex-1 overflow-y-auto p-4 space-y-4 hidden">
+        <!-- Image Card -->
+        <div id="dropzone" class="border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 rounded-2xl p-3.5 cursor-pointer transition bg-white dark:bg-zinc-950/40">
+          <div class="flex items-center gap-3">
+            <img id="thumbImg" class="w-14 h-14 object-cover rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 shrink-0" alt="Preview">
+            <div class="text-left flex-1 min-w-0">
+              <p id="imageStatusText" class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">Imported Image</p>
+              <p id="imageDimText" class="text-[11px] text-zinc-500 font-mono">512 x 512 px</p>
+              <p class="text-[10px] text-zinc-400 mt-0.5">Click, drop, or Cmd+V to replace</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Relief Depth & Geometry Controls -->
+        <div class="space-y-3 pt-1">
+          <label class="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">3D Relief Height & Dimensions</label>
+
+          <!-- Depth & Thickness Presets -->
+          <div>
+            <div class="flex justify-between text-[11px] mb-1.5">
+              <span class="text-zinc-600 dark:text-zinc-400 font-medium">Depth Presets</span>
+              <span class="text-[10px] text-zinc-400 font-mono" id="presetDepthLabel">Deep (4.0mm)</span>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5 text-xs">
+              <button data-maxz="2.40" data-minz="0.48" class="btnDepthPreset py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 text-center font-medium">2.4mm</button>
+              <button data-maxz="4.00" data-minz="0.80" class="btnDepthPreset py-1.5 rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-sm text-center">4.0mm</button>
+              <button data-maxz="6.40" data-minz="1.20" class="btnDepthPreset py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 text-center font-medium">6.4mm</button>
+              <button data-maxz="9.60" data-minz="1.60" class="btnDepthPreset py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 text-center font-medium">9.6mm</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-zinc-600 dark:text-zinc-400">Total Print Height (Max Z)</span>
+              <span id="valMaxZ" class="font-mono text-zinc-800 dark:text-zinc-200 font-medium">4.00 mm</span>
+            </div>
+            <input type="range" id="sliderMaxZ" min="1.0" max="15.0" step="0.08" value="4.00" class="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded cursor-pointer">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-zinc-600 dark:text-zinc-400">Base Floor Thickness (Min Z)</span>
+              <span id="valMinZ" class="font-mono text-zinc-800 dark:text-zinc-200 font-medium">0.80 mm</span>
+            </div>
+            <input type="range" id="sliderMinZ" min="0.2" max="5.0" step="0.08" value="0.80" class="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded cursor-pointer">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-zinc-600 dark:text-zinc-400">Depth Contrast (Contours)</span>
+              <span id="valContrast" class="font-mono text-zinc-800 dark:text-zinc-200">1.10</span>
+            </div>
+            <input type="range" id="sliderContrast" min="0.2" max="3" step="0.05" value="1.1" class="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded cursor-pointer">
+          </div>
+
+          <div class="flex items-center justify-between pt-1 text-xs">
+            <label class="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 cursor-pointer">
+              <input type="checkbox" id="checkInvert" class="w-4 h-4 rounded bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700">
+              <span>Invert Height (Light=Low)</span>
+            </label>
+            <label class="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 cursor-pointer">
+              <input type="checkbox" id="checkQuantize" checked class="w-4 h-4 rounded bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700">
+              <span>Snap Slicer Layers</span>
+            </label>
+          </div>
+
+          <!-- Surface Smoothing & Anti-Spike Controls -->
+          <div class="pt-2.5 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-zinc-600 dark:text-zinc-400">Surface Smoothing & Denoise</span>
+                <span id="valSmoothing" class="font-mono text-zinc-800 dark:text-zinc-200 font-medium">1.5</span>
+              </div>
+              <input type="range" id="sliderSmoothing" min="0.0" max="5.0" step="0.5" value="1.5" class="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded cursor-pointer">
+              <p class="text-[10px] text-zinc-400 mt-0.5">Removes micro-spikes & noise while preserving crisp contours</p>
+            </div>
+
+            <div class="space-y-1.5 pt-1">
+              <label class="flex items-center justify-between text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                <span>Despike Outliers & Grain</span>
+                <input type="checkbox" id="checkDespike" checked class="w-4 h-4 rounded bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700">
+              </label>
+              <label class="flex items-center justify-between text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                <span>Smooth Slicer Terraces</span>
+                <input type="checkbox" id="checkSmoothTerraces" checked class="w-4 h-4 rounded bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layer Step Presets -->
+        <div class="space-y-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+          <span class="text-[11px] text-zinc-500 dark:text-zinc-400 block">Slicer Layer Step Height</span>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button data-layer="0.04" class="btnLayerPreset bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-xs py-1.5 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-medium">0.04mm</button>
+            <button data-layer="0.08" class="btnLayerPreset bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold text-xs py-1.5 rounded-xl">0.08mm</button>
+            <button data-layer="0.12" class="btnLayerPreset bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-xs py-1.5 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-medium">0.12mm</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Universal Printers & Bed Sizing -->
+      <div id="tabContentPrinters" class="flex-1 overflow-y-auto p-4 space-y-4 hidden">
+        <!-- Active Printer Banner Card -->
+        <div id="activePrinterBanner" class="bg-white dark:bg-zinc-900/80 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs"></div>
+
+        <!-- Bed Sizing & Auto-Fitting Controls -->
+        <div class="bg-white dark:bg-zinc-900/80 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-3">
+          <label class="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">Automatic Bed Sizing</label>
+          
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btnFitToBed" class="py-2 px-3 rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold text-xs transition shadow-sm flex items-center justify-center gap-1.5 interactive-card">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              <span>Fit to Bed</span>
+            </button>
+            <button id="btnFillBed" class="py-2 px-3 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-medium text-xs transition border border-zinc-200 dark:border-zinc-700/80 interactive-card">
+              Fill Max Width
+            </button>
+          </div>
+
+          <div class="grid grid-cols-5 gap-1.5 text-[11px]">
+            <button data-size="100" class="btnPresetSize py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-center font-medium border border-zinc-200 dark:border-zinc-700/80">100mm</button>
+            <button data-size="150" class="btnPresetSize py-1.5 rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold text-center shadow-sm">150mm</button>
+            <button data-size="200" class="btnPresetSize py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-center font-medium border border-zinc-200 dark:border-zinc-700/80">200mm</button>
+            <button data-size="240" class="btnPresetSize py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-center font-medium border border-zinc-200 dark:border-zinc-700/80">240mm</button>
+            <button data-size="max" class="btnPresetSize py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-center font-medium border border-zinc-200 dark:border-zinc-700/80">Max</button>
+          </div>
+
+          <!-- Exact Dimensions -->
+          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+            <div>
+              <span class="text-[11px] text-zinc-500 dark:text-zinc-400 block mb-1">Print Width (mm)</span>
+              <input type="number" id="inputWidth" value="150" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs font-mono text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-400">
+            </div>
+            <div>
+              <span class="text-[11px] text-zinc-500 dark:text-zinc-400 block mb-1">Print Height (mm)</span>
+              <input type="number" id="inputHeight" value="150" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs font-mono text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-400">
+            </div>
+          </div>
+        </div>
+
+        <!-- Printer Catalog -->
+        <div class="bg-white dark:bg-zinc-900/80 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Printer Models & Beds</label>
+            <span class="text-[10px] text-zinc-400 font-mono">Real Profiles</span>
+          </div>
+
+          <!-- Brand Filter Chips -->
+          <div id="brandFilterChips" class="flex flex-wrap gap-1"></div>
+
+          <!-- Custom Bed Dimension Inputs (Shown when Custom is selected) -->
+          <div id="customBedConfig" class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2 hidden">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block">Custom Bed Dimensions</span>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-[10px] text-zinc-400 block mb-0.5">Bed Width (mm)</span>
+                <input type="number" id="customBedW" value="200" min="50" max="1000" class="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 font-mono">
+              </div>
+              <div>
+                <span class="text-[10px] text-zinc-400 block mb-0.5">Bed Height (mm)</span>
+                <input type="number" id="customBedH" value="200" min="50" max="1000" class="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 font-mono">
+              </div>
+            </div>
+          </div>
+
+          <!-- Printer Cards Container -->
+          <div id="printerCardList" class="space-y-2 max-h-[420px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- Pinned Sidebar Footer: Slicer Export Actions -->
+      <div class="p-3 border-t border-zinc-200 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm space-y-2 shrink-0">
+        <button id="btnExport3MF" class="w-full bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-semibold py-2.5 px-3 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 text-xs interactive-card">
+          <svg class="w-4 h-4 text-emerald-400 dark:text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <div class="text-left">
+            <span class="block font-bold leading-tight">Export Color-Mapped .3MF</span>
+            <span class="text-[9px] opacity-70 block font-normal leading-tight">Bambu Lab &bull; PrusaSlicer &bull; OrcaSlicer</span>
+          </div>
+        </button>
+
+        <button id="btnExportSTL" class="w-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium py-1.5 px-3 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs transition-all flex items-center justify-center gap-1.5 text-xs interactive-card">
+          <span>Export Watertight Binary .STL</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CENTER: 3D VIEWPORT HERO -->
+    <section class="flex-1 flex flex-col bg-zinc-100 dark:bg-zinc-950 relative overflow-hidden">
+      <!-- Top Viewport Floating Toolbar -->
+      <div class="viewport-toolbar absolute top-3 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
+        <!-- View Mode Switcher -->
+        <div class="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md p-1 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-md pointer-events-auto flex items-center gap-1">
+          <button id="btnView3D" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 transition shadow-sm">
+            3D Perspective
+          </button>
+          <button id="btnViewTop" class="px-3 py-1.5 text-xs font-medium rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition">
+            Top-Down (3D)
+          </button>
+          <button id="btnView2D" class="px-3 py-1.5 text-xs font-medium rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition">
+            2D Slices
+          </button>
+        </div>
+
+        <!-- 3D Viewport Controls -->
+        <div class="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-md pointer-events-auto flex items-center gap-2.5 text-xs">
+          <!-- 3D Relief Depth Exaggeration -->
+          <div class="flex items-center gap-2 pr-2 border-r border-zinc-200 dark:border-zinc-800">
+            <span class="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">3D Depth:</span>
+            <input type="range" id="sliderZScale" min="1" max="30" step="1" value="10" class="w-20 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded cursor-pointer">
+            <span id="valZScale" class="font-mono text-zinc-700 dark:text-zinc-300 text-[11px] w-8 font-semibold">10.0x</span>
+          </div>
+
+          <span class="text-zinc-400 text-[11px] font-medium">Cam:</span>
+          <button id="btnCamIso" class="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg font-medium transition">Iso</button>
+          <button id="btnCamTop" class="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg font-medium transition">Top</button>
+          <button id="btnCamFront" class="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg font-medium transition">Front</button>
+          <button id="btnCamReset" class="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg font-medium transition">Reset</button>
+
+          <div class="h-3.5 w-px bg-zinc-200 dark:border-zinc-800 mx-0.5"></div>
+
+          <label class="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300 cursor-pointer font-medium">
+            <input type="checkbox" id="checkBuildPlate" checked class="w-3.5 h-3.5 rounded bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700">
+            <span>Bed</span>
+          </label>
+          <label class="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300 cursor-pointer font-medium">
+            <input type="checkbox" id="checkGrid" checked class="w-3.5 h-3.5 rounded bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700">
+            <span>Grid</span>
+          </label>
+          <label class="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300 cursor-pointer font-medium">
+            <input type="checkbox" id="checkWire" class="w-3.5 h-3.5 rounded bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700">
+            <span>Wire</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 3D Canvas Container -->
+      <div id="canvasContainer" class="flex-1 w-full h-full relative"></div>
+
+      <!-- 2D Image Viewport -->
+      <div id="preview2DContainer" class="flex-1 w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 p-6 hidden">
+        <canvas id="opticalCanvas" class="max-w-full max-h-full rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800"></canvas>
+      </div>
+
+      <!-- Bottom Layer Scrubber -->
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 w-11/12 max-w-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xl flex items-center gap-3 text-xs">
+        <button id="btnPrevLayer" class="w-7 h-7 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl flex items-center justify-center font-bold text-xs transition">&larr;</button>
+        <button id="btnNextLayer" class="w-7 h-7 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl flex items-center justify-center font-bold text-xs transition">&rarr;</button>
+
+        <input type="range" id="scrubberSlider" min="0" max="49" value="0" class="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded cursor-pointer">
+
+        <span id="scrubberLabel" class="font-mono text-zinc-600 dark:text-zinc-300 min-w-[140px] text-right text-xs font-semibold">Layer All (4.00 mm)</span>
+
+        <button id="btnAllLayers" class="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-medium transition">All</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-semibold px-4 py-2 rounded-xl shadow-2xl transition transform translate-y-20 opacity-0 pointer-events-none flex items-center gap-2 z-50">
+    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    <span id="toastMsg">Exported successfully</span>
+  </div>
+
+  <!-- MODULAR JAVASCRIPT MODULES -->
+  <script src="js/state.js"></script>
+  <script src="js/palette.js"></script>
+  <script src="js/heightfield.js"></script>
+  <script src="js/buildplate.js"></script>
+  <script src="js/scene3d.js"></script>
+  <script src="js/exporter.js"></script>
+  <script src="js/printerManager.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

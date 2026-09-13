@@ -1,0 +1,53 @@
+# Zig build output and caches
+.zig-cache/
+zig-out/
+zig-cache/
+
+# Local build and release output
+dist/
+release/
+*.app/
+*.dmg
+*.exe
+*.dll
+*.pdb
+
+# Native build artifacts
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Native app/user state
+imgui.ini
+
